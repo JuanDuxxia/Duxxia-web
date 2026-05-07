@@ -1,6 +1,7 @@
 ---
 // src/pages/index.astro
 import '../styles/global.css';
+import InteractiveNetwork from '../components/InteractiveNetwork.astro';
 ---
 
 <html lang="es" class="scroll-smooth">
@@ -37,9 +38,9 @@ import '../styles/global.css';
     </nav>
 
     <section class="relative pt-32 pb-20 lg:pt-52 lg:pb-40 overflow-hidden">
-      <canvas id="particles-canvas" class="absolute inset-0 -z-10 opacity-60"></canvas>
+      <InteractiveNetwork client:load />
       
-      <div class="max-w-7xl mx-auto px-6 text-center relative">
+      <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
         <div class="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-duxxia-graphite/50 border border-white/10 text-[10px] font-bold uppercase tracking-[0.2em] text-duxxia-cyan backdrop-blur-sm reveal">
           <span class="w-2 h-2 rounded-full bg-duxxia-cyan mr-2 shadow-[0_0_8px_#00D4FF] animate-pulse"></span>
           Engineered for Performance
@@ -133,7 +134,7 @@ import '../styles/global.css';
     </footer>
 
     <script>
-      // 1. ANIMACIÓN DE APARICIÓN (Scroll Observer)
+      // Mantenemos solo la animación de aparición (Reveal)
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
@@ -149,65 +150,6 @@ import '../styles/global.css';
         el.style.transition = "all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)";
         observer.observe(el);
       });
-
-      // 2. RED NEURONAL (Canvas Particles)
-      const canvas = document.getElementById('particles-canvas');
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resize() {
-          canvas.width = window.innerWidth;
-          canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        class Particle {
-          constructor() {
-            this.init();
-          }
-          init() {
-            this.x = Math.random() * canvas.width;
-            this.y = Math.random() * canvas.height;
-            this.vx = (Math.random() - 0.5) * 0.6; // Velocidad
-            this.vy = (Math.random() - 0.5) * 0.6;
-          }
-          update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-            if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-          }
-        }
-
-        // Crear partículas
-        for (let i = 0; i < 90; i++) particles.push(new Particle());
-
-        function draw() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.lineWidth = 0.6;
-          for (let i = 0; i < particles.length; i++) {
-            let p1 = particles[i];
-            p1.update();
-            for (let j = i + 1; j < particles.length; j++) {
-              let p2 = particles[j];
-              let dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-              // Si están cerca, dibujamos una línea
-              if (dist < 160) {
-                // Color corporativo (Purple/Cyan mix) con opacidad basada en la distancia
-                ctx.strokeStyle = `rgba(0, 212, 255, ${0.8 - dist/160})`;
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.stroke();
-              }
-            }
-          }
-          requestAnimationFrame(draw);
-        }
-        draw();
-      }
     </script>
   </body>
 </html>

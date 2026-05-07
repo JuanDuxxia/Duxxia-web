@@ -1,0 +1,135 @@
+---
+// src/components/InteractiveNetwork.astro
+---
+<div class="absolute inset-0 z-[-1] overflow-hidden bg-gradient-to-b from-[#060C18] to-black">
+  <canvas id="neuralCanvas" class="w-full h-full opacity-60"></canvas>
+</div>
+
+<script>
+  class Node {
+    constructor(canvas, x, y, vx, vy) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.x = x;
+      this.y = y;
+      this.vx = vx;
+      this.vy = vy;
+      this.originalVx = vx;
+      this.originalVy = vy;
+      this.radius = 1.5;
+    }
+
+    update(mouse) {
+      // Movimiento base
+      this.x += this.vx;
+      this.y += this.vy;
+
+      // Rebote en bordes
+      if (this.x < 0 || this.x > this.canvas.width) this.vx = -this.vx;
+      if (this.y < 0 || this.y > this.canvas.height) this.vy = -this.vy;
+
+      // "Gravedad" del cursor
+      const dx = this.x - mouse.x;
+      const dy = this.y - mouse.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const attractionRange = 150; // Rango de influencia
+
+      if (dist < attractionRange) {
+        // Fuerza de atracción sutil
+        this.vx += (dx / dist) * -0.05;
+        this.vy += (dy / dist) * -0.05;
+      } else {
+        // Recuperación de velocidad original
+        this.vx += (this.originalVx - this.vx) * 0.05;
+        this.vy += (this.originalVy - this.vy) * 0.05;
+      }
+    }
+
+    draw() {
+      this.ctx.beginPath();
+      this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      this.ctx.fillStyle = '#C0C0C0'; // Plateado base
+      this.ctx.fill();
+    }
+  }
+
+  const init = () => {
+    const canvas = document.getElementById('neuralCanvas');
+    const ctx = canvas.getContext('2d');
+    const nodes = [];
+    const mouse = { x: null, y: null };
+    const numNodes = 120; // Ajustar para rendimiento/densidad
+
+    // Ajustar canvas al tamaño real
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight; // Solo la parte superior si se prefiere
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Track mouse
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
+
+    // Crear nodos
+    for (let i = 0; i < numNodes; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const vx = (Math.random() - 0.5) * 0.5;
+      const vy = (Math.random() - 0.5) * 0.5;
+      nodes.push(new Node(canvas, x, y, vx, vy));
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Dibujar líneas primero
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          const maxDist = 120;
+
+          if (dist < maxDist) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            
+            // Efecto de color de acento cerca del cursor
+            const mouseDx1 = nodes[i].x - mouse.x;
+            const mouseDy1 = nodes[i].y - mouse.y;
+            const minDistToMouse = Math.min(Math.sqrt(mouseDx1*mouseDx1 + mouseDy1*mouseDy1), /* etc for second node */ dist);
+            const energyRange = 100;
+
+            if (mouse.x && minDistToMouse < energyRange) {
+              // Brillo Cyan de Duxxia
+              ctx.strokeStyle = `rgba(0, 212, 255, ${1 - dist / maxDist})`;
+              ctx.lineWidth = 1;
+            } else {
+              // Plateado base translúcido
+              ctx.strokeStyle = `rgba(192, 192, 192, ${(1 - dist / maxDist) * 0.3})`;
+              ctx.lineWidth = 0.5;
+            }
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Dibujar nodos después
+      nodes.forEach(node => {
+        node.update(mouse);
+        node.draw();
+      });
+
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+  };
+
+  init();
+</script>
